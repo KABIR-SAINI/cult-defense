@@ -1,8 +1,8 @@
 extends CharacterBody2D
-
 const ATTACK_RANGE = 50.0
 const TRAIL_LENGTH = 5
 const TRAIL_SPACING = 0.05
+const GLOW_RADIUS = 100.0
 
 @export var speed = 150.0
 @export var health = 50.0
@@ -15,7 +15,8 @@ var player_ref = null
 var visual_node = null
 var trail_positions = []
 var trail_timer = 0.0
-var current_angle = 0.0  # Track rotation angle
+var current_angle = 0.0
+var range_indicator = null
 
 func _ready():
 	current_health = health
@@ -25,10 +26,27 @@ func _ready():
 		$Hitbox.add_to_group("demons")
 	
 	player_ref = get_tree().get_first_node_in_group("player")
+	create_range_indicator()
 	create_visual()
 
+func create_range_indicator():
+	if not has_node("RangeIndicator"):
+		var range_circle = Line2D.new()
+		range_circle.name = "RangeIndicator"
+		range_circle.width = 2
+		range_circle.default_color = Color(0.8, 0.2, 0.2, 0.3)
+		
+		var segments = 16
+		for i in range(segments + 1):
+			var angle = (i / float(segments)) * TAU
+			var point = Vector2(cos(angle), sin(angle)) * GLOW_RADIUS
+			range_circle.add_point(point)
+		
+		range_circle.z_index = -1
+		add_child(range_circle)
+		range_indicator = range_circle
+
 func create_visual():
-	# Demons have no visual sprite - just motion blur trail
 	pass
 
 func _physics_process(delta):
@@ -41,13 +59,8 @@ func _physics_process(delta):
 	velocity = direction * speed
 	move_and_slide()
 	
-	# Update rotation angle to face player
 	current_angle = direction.angle()
-	
-	# Update motion blur trail
 	update_trail(delta)
-	
-	# Force redraw every frame to update triangle rotation
 	queue_redraw()
 	
 	var distance = global_position.distance_to(player_ref.global_position)
@@ -56,8 +69,6 @@ func _physics_process(delta):
 		if attack_timer <= 0:
 			attack_player()
 			attack_timer = attack_cooldown
-			if visual_node:
-				flash_red()
 
 func update_trail(delta):
 	trail_timer += delta
@@ -72,17 +83,14 @@ func update_trail(delta):
 	queue_redraw()
 
 func _draw():
-	# Draw main triangle at current position, using stored angle
 	var size = 15.0
 	
-	# Triangle pointing in movement direction
 	var point1 = Vector2(cos(current_angle), sin(current_angle)) * size
 	var point2 = Vector2(cos(current_angle + 2.5), sin(current_angle + 2.5)) * (size * 0.7)
 	var point3 = Vector2(cos(current_angle - 2.5), sin(current_angle - 2.5)) * (size * 0.7)
 	
 	draw_colored_polygon(PackedVector2Array([point1, point2, point3]), Color(0.8, 0.2, 0.2))
 	
-	# Draw fading trail
 	if trail_positions.size() < 2:
 		return
 	
@@ -96,10 +104,6 @@ func _draw():
 func attack_player():
 	if is_instance_valid(player_ref) and player_ref.has_method("take_damage"):
 		player_ref.take_damage(damage)
-
-func flash_red():
-	# No visual sprite to flash
-	pass
 
 func take_damage(amount):
 	current_health -= amount

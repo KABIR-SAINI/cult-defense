@@ -29,11 +29,11 @@ position = Vector2(960, 540)
 script = ExtResource("1_ig7tw")
 
 [node name="ColorRect" type="ColorRect" parent="Player"]
-custom_minimum_size = Vector2(1, 1)
+custom_minimum_size = Vector2(50, 50)
 offset_left = -25.0
 offset_top = -25.0
-offset_right = -24.0
-offset_bottom = -24.0
+offset_right = 25.0
+offset_bottom = 25.0
 color = Color(0.9219447, 0, 0.34339622, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]

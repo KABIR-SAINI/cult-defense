@@ -1,8 +1,7 @@
 extends CharacterBody2D
-
 const DEATH_HEALTH = 0.0
 const TRAIL_LENGTH = 8
-const TRAIL_SPACING = 0.03
+const TRAIL_SPACING = 0.06
 
 @export var speed = 300.0
 @export var max_health = 100.0
@@ -10,24 +9,21 @@ const TRAIL_SPACING = 0.03
 
 var current_health = max_health
 var main_ref = null
-var visual_node = null
 var trail_positions = []
 var trail_timer = 0.0
+var pulse_timer = 0.0
 
 func _ready():
 	current_health = max_health
 	add_to_group("player")
 	main_ref = get_tree().get_first_node_in_group("main")
-	create_visual()
-
-func create_visual():
-	# Player has no visual sprite - just motion blur trail
-	pass
 
 func _physics_process(delta):
 	handle_movement(delta)
 	handle_health_drain(delta)
 	update_trail(delta)
+	pulse_timer += delta
+	queue_redraw()
 
 func handle_movement(delta):
 	var direction = Vector2.ZERO
@@ -49,19 +45,26 @@ func update_trail(delta):
 		
 		if trail_positions.size() > TRAIL_LENGTH:
 			trail_positions.pop_front()
-	
-	queue_redraw()
 
 func _draw():
+	# Pulsating circle effect
+	var pulse_scale = 1.0 + sin(pulse_timer * 3.0) * 0.3
+	var pulse_radius = 20.0 * pulse_scale
+	var pulse_alpha = 0.4 + sin(pulse_timer * 3.0) * 0.2
+	
+	draw_circle(Vector2.ZERO, pulse_radius, Color(0.3, 0.6, 1.0, pulse_alpha))
+	draw_arc(Vector2.ZERO, pulse_radius + 3, 0, TAU, 32, Color(0.5, 0.8, 1.0, pulse_alpha * 1.5), 2.0)
+	
+	# Draw motion blur trail - BIGGER SIZE
 	if trail_positions.size() < 2:
 		return
 	
 	for i in range(trail_positions.size() - 1):
 		var alpha = float(i) / float(TRAIL_LENGTH)
-		var trail_color = Color(0.3, 0.6, 1.0, alpha * 0.4)
+		var trail_color = Color(0.3, 0.6, 1.0, alpha * 0.5)
 		
 		var local_pos = to_local(trail_positions[i])
-		draw_circle(local_pos, 12 * (1 - alpha * 0.4), trail_color)
+		draw_circle(local_pos, 25 * (1 - alpha * 0.3), trail_color)  # Was 12, now 25
 
 func handle_health_drain(delta):
 	if not is_instance_valid(main_ref):

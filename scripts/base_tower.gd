@@ -16,6 +16,7 @@ var time_alive = 0.0
 var can_be_sacrificed = false
 var visual_node = null
 var range_indicator = null
+var glow_particles = []
 
 func _ready():
 	add_to_group("followers")
@@ -23,6 +24,7 @@ func _ready():
 	create_range_indicator()
 	create_visual()
 	create_detection_range()
+	create_ambient_particles()
 
 func create_collision_shape():
 	if not has_node("CollisionShape2D"):
@@ -33,26 +35,24 @@ func create_collision_shape():
 		add_child(collision)
 
 func create_range_indicator():
-	# Semi-transparent circle showing attack range
 	if not has_node("RangeIndicator"):
-		var range_circle = Polygon2D.new()
+		var range_circle = Line2D.new()
 		range_circle.name = "RangeIndicator"
+		range_circle.width = 2
+		range_circle.default_color = Color(tower_color.r, tower_color.g, tower_color.b, 0.3)
 		
 		# Create circle points
-		var points = PackedVector2Array()
 		var segments = 32
-		for i in range(segments):
+		for i in range(segments + 1):
 			var angle = (i / float(segments)) * TAU
-			points.append(Vector2(cos(angle), sin(angle)) * detection_radius)
+			var point = Vector2(cos(angle), sin(angle)) * detection_radius
+			range_circle.add_point(point)
 		
-		range_circle.polygon = points
-		range_circle.color = Color(tower_color.r, tower_color.g, tower_color.b, 0.1)
 		range_circle.z_index = -1
 		add_child(range_circle)
 		range_indicator = range_circle
 
 func create_visual():
-	# Override this in child classes for different visuals
 	if not has_node("Visual"):
 		var polygon = Polygon2D.new()
 		polygon.name = "Visual"
@@ -62,20 +62,33 @@ func create_visual():
 		])
 		polygon.color = tower_color
 		
-		# Add outline
-		var line = Line2D.new()
-		line.name = "Outline"
-		line.add_point(Vector2(-15, -15))
-		line.add_point(Vector2(15, -15))
-		line.add_point(Vector2(15, 15))
-		line.add_point(Vector2(-15, 15))
-		line.add_point(Vector2(-15, -15))
-		line.default_color = Color.BLACK
-		line.width = 2
-		polygon.add_child(line)
+		# Add glowing outline
+		var outline = Line2D.new()
+		outline.name = "Outline"
+		outline.add_point(Vector2(-15, -15))
+		outline.add_point(Vector2(15, -15))
+		outline.add_point(Vector2(15, 15))
+		outline.add_point(Vector2(-15, 15))
+		outline.add_point(Vector2(-15, -15))
+		outline.default_color = Color(tower_color.r * 1.5, tower_color.g * 1.5, tower_color.b * 1.5)
+		outline.width = 3
+		polygon.add_child(outline)
 		
 		add_child(polygon)
 		visual_node = polygon
+
+func create_ambient_particles():
+	# Create floating particle effect around tower
+	for i in range(3):
+		var particle = Polygon2D.new()
+		particle.polygon = PackedVector2Array([
+			Vector2(-2, -2), Vector2(2, -2),
+			Vector2(2, 2), Vector2(-2, 2)
+		])
+		particle.color = tower_color
+		particle.modulate.a = 0.6
+		add_child(particle)
+		glow_particles.append(particle)
 
 func create_detection_range():
 	if not has_node("DetectionRange"):
@@ -92,17 +105,28 @@ func _process(delta):
 	time_alive += delta
 	shoot_timer -= delta
 	
+	# Animate floating particles
+	for i in range(glow_particles.size()):
+		var particle = glow_particles[i]
+		var orbit_angle = time_alive * 2.0 + (i * TAU / 3.0)
+		var orbit_radius = 25.0 + sin(time_alive * 3.0 + i) * 5.0
+		particle.position = Vector2(cos(orbit_angle), sin(orbit_angle)) * orbit_radius
+		particle.modulate.a = 0.4 + sin(time_alive * 4.0 + i) * 0.3
+	
 	if shoot_timer <= 0:
 		find_and_shoot_demon()
 		shoot_timer = shoot_cooldown
 	
 	# Pulse effect when shooting
-	if visual_node and shoot_timer > shoot_cooldown - 0.1:
-		var scale_factor = 1.0 + (0.1 - (shoot_cooldown - shoot_timer)) * 2.0
+	if visual_node and shoot_timer > shoot_cooldown - 0.15:
+		var t = (shoot_cooldown - shoot_timer) / 0.15
+		var scale_factor = 1.0 + sin(t * PI) * 0.2
 		visual_node.scale = Vector2(scale_factor, scale_factor)
+		visual_node.modulate = Color(2, 2, 2)
 	else:
 		if visual_node:
 			visual_node.scale = Vector2.ONE
+			visual_node.modulate = Color.WHITE
 
 func find_and_shoot_demon():
 	var all_demons = get_tree().get_nodes_in_group("demons")
@@ -125,24 +149,37 @@ func shoot_at_demon(demon):
 	demon.take_damage(actual_damage)
 
 func create_shoot_effect(target_pos: Vector2):
-	# Create a line that fades out
+	# Bright laser beam
 	var line = Line2D.new()
 	line.add_point(Vector2.ZERO)
 	line.add_point(to_local(target_pos))
 	line.default_color = tower_color
-	line.width = 3
+	line.width = 4
+	line.z_index = 10
 	add_child(line)
 	
-	# Fade and remove
+	# Glow effect
+	var glow_line = Line2D.new()
+	glow_line.add_point(Vector2.ZERO)
+	glow_line.add_point(to_local(target_pos))
+	glow_line.default_color = Color(tower_color.r * 2, tower_color.g * 2, tower_color.b * 2, 0.5)
+	glow_line.width = 12
+	glow_line.z_index = 9
+	add_child(glow_line)
+	
+	# Fade out
 	var tween = create_tween()
-	tween.tween_property(line, "modulate:a", 0.0, 0.2)
-	tween.tween_callback(line.queue_free)
+	tween.parallel().tween_property(line, "modulate:a", 0.0, 0.15)
+	tween.parallel().tween_property(glow_line, "modulate:a", 0.0, 0.15)
+	tween.tween_callback(func(): 
+		line.queue_free()
+		glow_line.queue_free()
+	)
 
 func enable_sacrifice():
 	can_be_sacrificed = true
 	input_pickable = true
 	
-	# Highlight when sacrificeable
 	if visual_node:
 		visual_node.modulate = Color(1.5, 1.5, 1.5)
 
@@ -171,7 +208,6 @@ func _input(event):
 				get_viewport().set_input_as_handled()
 
 func sacrifice():
-	# Death effect
 	create_sacrifice_effect()
 	
 	var heal_amount = HEAL_BASE + (time_alive * HEAL_SCALING_PER_SECOND)
@@ -183,21 +219,45 @@ func sacrifice():
 	queue_free()
 
 func create_sacrifice_effect():
-	# Expanding circle effect
-	var particles = Polygon2D.new()
-	var points = PackedVector2Array()
-	for i in range(8):
-		var angle = (i / 8.0) * TAU
-		points.append(Vector2(cos(angle), sin(angle)) * 20)
-	particles.polygon = points
-	particles.color = tower_color
-	particles.global_position = global_position
-	get_parent().add_child(particles)
+	# Expanding rings
+	for ring in range(3):
+		var circle = Line2D.new()
+		circle.width = 3
+		circle.default_color = tower_color
+		
+		var segments = 24
+		for i in range(segments + 1):
+			var angle = (i / float(segments)) * TAU
+			circle.add_point(Vector2(cos(angle), sin(angle)) * 20)
+		
+		circle.global_position = global_position
+		get_parent().add_child(circle)
+		
+		var tween = create_tween()
+		var delay = ring * 0.1
+		tween.tween_interval(delay)
+		tween.parallel().tween_property(circle, "scale", Vector2(4, 4), 0.5)
+		tween.parallel().tween_property(circle, "modulate:a", 0.0, 0.5)
+		tween.tween_callback(circle.queue_free)
 	
-	var tween = create_tween()
-	tween.parallel().tween_property(particles, "scale", Vector2(3, 3), 0.5)
-	tween.parallel().tween_property(particles, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(particles.queue_free)
+	# Particle burst
+	for i in range(12):
+		var particle = Polygon2D.new()
+		var angle = (i / 12.0) * TAU
+		particle.polygon = PackedVector2Array([
+			Vector2(-3, -3), Vector2(3, -3),
+			Vector2(3, 3), Vector2(-3, 3)
+		])
+		particle.color = tower_color
+		particle.global_position = global_position
+		get_parent().add_child(particle)
+		
+		var end_pos = global_position + Vector2(cos(angle), sin(angle)) * 60
+		
+		var tween = create_tween()
+		tween.parallel().tween_property(particle, "global_position", end_pos, 0.4)
+		tween.parallel().tween_property(particle, "modulate:a", 0.0, 0.4)
+		tween.tween_callback(particle.queue_free)
 
 func take_damage(amount):
 	pass

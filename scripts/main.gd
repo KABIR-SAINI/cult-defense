@@ -85,9 +85,9 @@ func setup_spawn_timer():
 func setup_music():
 	# Load game music playlist
 	game_music_playlist = [
-		load("res://audio/game_music_1.ogg"),
-		load("res://audio/game_music_2.ogg"),
-		load("res://audio/game_music_3.ogg")
+		load("res://Music/Game1 Music.mp3"),
+		load("res://Music/Game2 Music.mp3"),
+		load("res://Music/Game3 Music.mp3")
 		# Add more songs here as needed
 	]
 	
@@ -103,7 +103,7 @@ func setup_music():
 	# Boss music
 	boss_music = AudioStreamPlayer.new()
 	boss_music.name = "BossMusic"
-	boss_music.stream = load("res://audio/boss_music.ogg")
+	boss_music.stream = load("res://Music/Boss Music.mp3")
 	boss_music.volume_db = -8
 	add_child(boss_music)
 
@@ -168,11 +168,11 @@ func start_wave():
 	enable_follower_sacrifice()
 	setup_demon_spawning()
 	
-	# Start appropriate music with fade in
+	# Only transition music if it's a boss round OR if game music isn't playing
 	if is_boss_round:
 		transition_to_boss_music()
-	else:
-		transition_to_game_music()
+	elif not game_music.playing:
+		game_music.play()
 
 func enable_follower_sacrifice():
 	for follower in get_tree().get_nodes_in_group("followers"):
@@ -266,7 +266,9 @@ func complete_wave():
 	wave_active = false
 	spawn_timer.stop()
 	
-	# Don't fade out music - keep it playing continuously
+	# If boss music was playing, transition back to game music
+	if is_boss_round and boss_music.playing:
+		transition_to_game_music()
 	
 	current_wave += 1
 	

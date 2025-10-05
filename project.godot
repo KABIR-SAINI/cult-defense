@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="CultDefense"
-run/main_scene="uid://d287gomxnf0kw"
+run/main_scene="uid://b4fo3ftktrrg5"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 

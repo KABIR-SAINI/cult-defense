@@ -11,15 +11,20 @@ const SPAWN_DISTANCE_MAX = 650
 # Economy constants
 const STARTING_CASH = 150
 const CASH_PER_KILL = 30
+const BOSS_CASH_REWARD = 200
 const BASIC_TOWER_COST = 50
 const SNIPER_TOWER_COST = 100
 const MACHINEGUN_TOWER_COST = 75
+
+# Boss constants
+const BOSS_ROUND_INTERVAL = 5
 
 # Preloaded scenes
 var basic_tower_scene = preload("res://scenes/basic_tower.tscn")
 var sniper_tower_scene = preload("res://scenes/sniper_tower.tscn")
 var machinegun_tower_scene = preload("res://scenes/machinegun_tower.tscn")
 var demon_scene = preload("res://scenes/demon.tscn")
+var boss_scene = preload("res://scenes/boss.tscn")
 
 # References
 var player
@@ -41,6 +46,7 @@ var wave_active = false
 var demons_alive = 0
 var demons_to_spawn = INITIAL_DEMONS
 var demons_spawned = 0
+var is_boss_round = false
 
 func _ready():
 	add_to_group("main")
@@ -54,7 +60,7 @@ func cache_references():
 	if has_node("UI/StartWaveButton"):
 		start_button = $UI/StartWaveButton
 		start_button.pressed.connect(start_wave)
-		start_button.visible = false
+		start_button.visible = true
 	
 	if has_node("UI/WaveLabel"):
 		wave_label = $UI/WaveLabel
@@ -138,12 +144,36 @@ func enable_follower_sacrifice():
 			follower.enable_sacrifice()
 
 func setup_demon_spawning():
-	demons_to_spawn = INITIAL_DEMONS + (current_wave - 1) * DEMONS_PER_WAVE
-	demons_spawned = 0
-	demons_alive = 0
+	# Check if this is a boss round
+	is_boss_round = (current_wave % BOSS_ROUND_INTERVAL == 0)
 	
-	spawn_timer.wait_time = SPAWN_INTERVAL
-	spawn_timer.start()
+	if is_boss_round:
+		spawn_boss()
+		demons_to_spawn = 0
+		demons_spawned = 0
+		demons_alive = 1
+	else:
+		demons_to_spawn = INITIAL_DEMONS + (current_wave - 1) * DEMONS_PER_WAVE
+		demons_spawned = 0
+		demons_alive = 0
+		spawn_timer.wait_time = SPAWN_INTERVAL
+		spawn_timer.start()
+	
+	update_ui()
+
+func spawn_boss():
+	var spawn_pos = get_random_spawn_position()
+	var boss = boss_scene.instantiate()
+	
+	call_deferred("add_child", boss)
+	boss.global_position = spawn_pos
+	
+	# Scale boss stats with wave
+	var wave_multiplier = current_wave / BOSS_ROUND_INTERVAL
+	boss.health = 500.0 * wave_multiplier
+	boss.current_health = boss.health
+	boss.damage = 30.0 + (wave_multiplier * 10.0)
+	boss.speed = 100.0 + (wave_multiplier * 10.0)
 
 func spawn_demon():
 	if demons_spawned >= demons_to_spawn:
@@ -185,8 +215,16 @@ func on_demon_died():
 	if should_complete_wave():
 		complete_wave()
 
+func on_boss_died():
+	demons_alive -= 1
+	current_cash += BOSS_CASH_REWARD
+	update_ui()
+	
+	if should_complete_wave():
+		complete_wave()
+
 func should_complete_wave() -> bool:
-	return demons_alive <= 0 and wave_active and demons_spawned >= demons_to_spawn
+	return demons_alive <= 0 and wave_active and (demons_spawned >= demons_to_spawn or is_boss_round)
 
 func complete_wave():
 	wave_active = false
@@ -205,6 +243,7 @@ func start_placement_phase():
 	placement_phase = true
 	followers_placed = 0
 	selected_tower_type = "basic"
+	is_boss_round = false
 	update_ui()
 
 func update_ui():
@@ -215,7 +254,12 @@ func update_ui():
 
 func update_wave_label():
 	if wave_label:
-		wave_label.text = "Wave: " + str(current_wave)
+		if is_boss_round and wave_active:
+			wave_label.text = "Wave: " + str(current_wave) + " - BOSS!"
+			wave_label.modulate = Color(1.0, 0.2, 0.2)
+		else:
+			wave_label.text = "Wave: " + str(current_wave)
+			wave_label.modulate = Color.WHITE
 
 func update_cash_label():
 	if cash_label:

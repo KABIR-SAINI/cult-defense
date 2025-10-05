@@ -7,8 +7,12 @@ const SPAWN_INTERVAL = 1.5
 const SPAWN_DISTANCE_MIN = 550
 const SPAWN_DISTANCE_MAX = 650
 
-var follower_scene = preload("res://scenes/follower.tscn")
+var basic_tower_scene = preload("res://scenes/basic_tower.tscn")
+var sniper_tower_scene = preload("res://scenes/sniper_tower.tscn")
+var machinegun_tower_scene = preload("res://scenes/machinegun_tower.tscn")
 var demon_scene = preload("res://scenes/demon.tscn")
+
+var selected_tower_type = "basic"
 
 var player
 var start_button
@@ -44,14 +48,39 @@ func _ready():
 	update_ui()
 
 func _unhandled_input(event):
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if placement_phase and followers_placed < followers_to_place:
+	if placement_phase and followers_placed < followers_to_place:
+		# Number keys to select tower type
+		if event is InputEventKey and event.pressed:
+			match event.keycode:
+				KEY_1:
+					selected_tower_type = "basic"
+					print("Selected: Basic Tower")
+				KEY_2:
+					selected_tower_type = "sniper"
+					print("Selected: Sniper Tower")
+				KEY_3:
+					selected_tower_type = "machinegun"
+					print("Selected: Machine Gun Tower")
+		
+		# Click to place selected tower
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			place_follower(get_global_mouse_position())
 
 func place_follower(pos):
-	var follower = follower_scene.instantiate()
-	follower.global_position = pos
-	add_child(follower)
+	var tower_scene
+	match selected_tower_type:
+		"basic":
+			tower_scene = basic_tower_scene
+		"sniper":
+			tower_scene = sniper_tower_scene
+		"machinegun":
+			tower_scene = machinegun_tower_scene
+		_:
+			tower_scene = basic_tower_scene
+	
+	var tower = tower_scene.instantiate()
+	tower.global_position = pos
+	add_child(tower)
 	followers_placed += 1
 	
 	if followers_placed >= followers_to_place and start_button:
@@ -127,6 +156,7 @@ func start_placement_phase():
 	placement_phase = true
 	followers_placed = 0
 	followers_to_place = INITIAL_FOLLOWERS + (current_wave - 1)
+	selected_tower_type = "basic"  # Reset to basic tower
 	update_ui()
 
 func update_ui():

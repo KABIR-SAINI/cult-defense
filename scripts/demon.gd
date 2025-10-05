@@ -130,9 +130,7 @@ func create_death_effect():
 		particle.color = Color(1, 0.5, 0)
 		particle.global_position = global_position
 		get_parent().add_child(particle)
-		
 		var end_pos = global_position + Vector2(cos(angle), sin(angle)) * 40
-		
 		var tween = create_tween()
 		tween.parallel().tween_property(particle, "global_position", end_pos, 0.3)
 		tween.parallel().tween_property(particle, "modulate:a", 0.0, 0.3)

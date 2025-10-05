@@ -55,7 +55,6 @@ func _draw():
 	draw_circle(Vector2.ZERO, pulse_radius, Color(0.3, 0.6, 1.0, pulse_alpha))
 	draw_arc(Vector2.ZERO, pulse_radius + 3, 0, TAU, 32, Color(0.5, 0.8, 1.0, pulse_alpha * 1.5), 2.0)
 	
-	# Draw motion blur trail - BIGGER SIZE
 	if trail_positions.size() < 2:
 		return
 	

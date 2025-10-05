@@ -62,7 +62,7 @@ func create_visual():
 		])
 		polygon.color = tower_color
 		
-		# Add glowing outline
+
 		var outline = Line2D.new()
 		outline.name = "Outline"
 		outline.add_point(Vector2(-15, -15))
@@ -78,7 +78,7 @@ func create_visual():
 		visual_node = polygon
 
 func create_ambient_particles():
-	# Create floating particle effect around tower
+	
 	for i in range(3):
 		var particle = Polygon2D.new()
 		particle.polygon = PackedVector2Array([
@@ -105,7 +105,7 @@ func _process(delta):
 	time_alive += delta
 	shoot_timer -= delta
 	
-	# Animate floating particles
+
 	for i in range(glow_particles.size()):
 		var particle = glow_particles[i]
 		var orbit_angle = time_alive * 2.0 + (i * TAU / 3.0)
@@ -117,7 +117,7 @@ func _process(delta):
 		find_and_shoot_demon()
 		shoot_timer = shoot_cooldown
 	
-	# Pulse effect when shooting
+
 	if visual_node and shoot_timer > shoot_cooldown - 0.15:
 		var t = (shoot_cooldown - shoot_timer) / 0.15
 		var scale_factor = 1.0 + sin(t * PI) * 0.2
@@ -149,7 +149,7 @@ func shoot_at_demon(demon):
 	demon.take_damage(actual_damage)
 
 func create_shoot_effect(target_pos: Vector2):
-	# Bright laser beam
+	
 	var line = Line2D.new()
 	line.add_point(Vector2.ZERO)
 	line.add_point(to_local(target_pos))
@@ -158,7 +158,7 @@ func create_shoot_effect(target_pos: Vector2):
 	line.z_index = 10
 	add_child(line)
 	
-	# Glow effect
+	
 	var glow_line = Line2D.new()
 	glow_line.add_point(Vector2.ZERO)
 	glow_line.add_point(to_local(target_pos))
@@ -167,7 +167,7 @@ func create_shoot_effect(target_pos: Vector2):
 	glow_line.z_index = 9
 	add_child(glow_line)
 	
-	# Fade out
+	
 	var tween = create_tween()
 	tween.parallel().tween_property(line, "modulate:a", 0.0, 0.15)
 	tween.parallel().tween_property(glow_line, "modulate:a", 0.0, 0.15)
@@ -219,7 +219,7 @@ func sacrifice():
 	queue_free()
 
 func create_sacrifice_effect():
-	# Expanding rings
+	
 	for ring in range(3):
 		var circle = Line2D.new()
 		circle.width = 3
@@ -240,7 +240,7 @@ func create_sacrifice_effect():
 		tween.parallel().tween_property(circle, "modulate:a", 0.0, 0.5)
 		tween.tween_callback(circle.queue_free)
 	
-	# Particle burst
+	
 	for i in range(12):
 		var particle = Polygon2D.new()
 		var angle = (i / 12.0) * TAU

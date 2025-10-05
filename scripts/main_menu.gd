@@ -84,20 +84,16 @@ func _process(delta):
 	
 	pulse_timer += delta
 	
-	# Smooth pulsating circle
 	var circle_pulse = 1.0 + sin(pulse_timer * 1.8) * 0.08
 	circle.scale = Vector2(circle_pulse, circle_pulse)
 	
-	# Glow pulses slightly offset
 	var glow_pulse = 1.0 + sin(pulse_timer * 2.2) * 0.12
 	circle_glow.scale = Vector2(glow_pulse, glow_pulse)
 	circle_glow.modulate.a = 0.25 + sin(pulse_timer * 2.5) * 0.15
 	
-	# Subtle title pulse
 	var title_pulse = 1.0 + sin(pulse_timer * 1.5) * 0.02
 	title_label.scale = Vector2(title_pulse, title_pulse)
 	
-	# Prominent prompt pulse
 	var prompt_pulse = 0.6 + abs(sin(pulse_timer * 2.5)) * 0.4
 	prompt_label.modulate.a = prompt_pulse
 
@@ -112,18 +108,15 @@ func start_transition():
 	is_transitioning = true
 	can_start = false
 	
-	# Fade out menu music smoothly
 	var music_fade = create_tween()
 	music_fade.tween_property(music_player, "volume_db", -80, 1.5)
 	music_fade.tween_callback(music_player.stop)
 	
-	# Fade out title and prompt quickly
 	var fade_tween = create_tween().set_parallel(true)
 	fade_tween.tween_property(title_label, "modulate:a", 0.0, 0.4)
 	fade_tween.tween_property(prompt_label, "modulate:a", 0.0, 0.4)
 	fade_tween.tween_property(circle_glow, "modulate:a", 0.0, 0.5)
 	
-	# Slide circle up elegantly
 	await get_tree().create_timer(0.2).timeout
 	
 	var slide_tween = create_tween()
@@ -132,7 +125,6 @@ func start_transition():
 	slide_tween.tween_callback(load_game)
 
 func load_game():
-	# Update this path to match your game scene location
 	var result = get_tree().change_scene_to_file("res://main.tscn")
 	if result != OK:
 		print("ERROR: Could not load game scene. Check the path in load_game()")

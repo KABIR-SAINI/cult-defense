@@ -83,15 +83,13 @@ func setup_spawn_timer():
 	add_child(spawn_timer)
 
 func setup_music():
-	# Load game music playlist
 	game_music_playlist = [
 		load("res://Music/Game1 Music.mp3"),
 		load("res://Music/Game2 Music.mp3"),
 		load("res://Music/Game3 Music.mp3")
-		# Add more songs here as needed
 	]
 	
-	# Game music player - start with first song
+
 	game_music = AudioStreamPlayer.new()
 	game_music.name = "GameMusic"
 	game_music.stream = game_music_playlist[0]
@@ -167,7 +165,7 @@ func start_wave():
 	enable_follower_sacrifice()
 	setup_demon_spawning()
 	
-	# Only transition music if it's a boss round OR if game music isn't playing
+	
 	if is_boss_round:
 		transition_to_boss_music()
 	elif not game_music.playing:
@@ -203,7 +201,7 @@ func spawn_boss():
 	call_deferred("add_child", boss)
 	boss.global_position = spawn_pos
 	
-	# Scale boss stats with wave
+
 	var wave_multiplier = current_wave / BOSS_ROUND_INTERVAL
 	boss.health = 500.0 * wave_multiplier
 	boss.current_health = boss.health
@@ -265,7 +263,7 @@ func complete_wave():
 	wave_active = false
 	spawn_timer.stop()
 	
-	# If boss music was playing, transition back to game music
+	
 	if is_boss_round and boss_music.playing:
 		transition_to_game_music()
 	
@@ -276,17 +274,15 @@ func complete_wave():
 	start_placement_phase()
 
 func fade_out_all_music():
-	# This function is no longer used but kept for compatibility
+
 	pass
 
 func transition_to_game_music():
-	# Stop and fade out boss music if playing
 	if boss_music.playing:
 		var fade_out = create_tween()
 		fade_out.tween_property(boss_music, "volume_db", -80, 1.0)
 		fade_out.tween_callback(boss_music.stop)
 	
-	# Resume game music if it was stopped, or just fade it back in
 	if not game_music.playing:
 		game_music.play()
 	
@@ -295,19 +291,16 @@ func transition_to_game_music():
 	fade_in.tween_property(game_music, "volume_db", -10, 1.5)
 
 func _on_game_music_finished():
-	# Play next song in playlist
 	current_song_index = (current_song_index + 1) % game_music_playlist.size()
 	game_music.stream = game_music_playlist[current_song_index]
 	game_music.play()
 
 func transition_to_boss_music():
-	# Stop and fade out game music if playing
 	if game_music.playing:
 		var fade_out = create_tween()
 		fade_out.tween_property(game_music, "volume_db", -80, 1.0)
 		fade_out.tween_callback(game_music.stop)
 	
-	# Start boss music from silent and fade in
 	boss_music.volume_db = -80
 	boss_music.play()
 	var fade_in = create_tween()

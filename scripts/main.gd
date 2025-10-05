@@ -10,7 +10,7 @@ const SPAWN_DISTANCE_MAX = 650
 
 # Economy constants
 const STARTING_CASH = 150
-const CASH_PER_KILL = 60
+const CASH_PER_KILL = 30
 const BASIC_TOWER_COST = 50
 const SNIPER_TOWER_COST = 100
 const MACHINEGUN_TOWER_COST = 75

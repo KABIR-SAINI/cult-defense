@@ -7,3 +7,5 @@ func _ready():
 	detection_radius = 200.0
 	tower_color = Color(0.5, 0.5, 1.0)  # Light blue
 	super._ready()
+
+	

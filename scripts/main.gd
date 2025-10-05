@@ -17,6 +17,7 @@ var selected_tower_type = "basic"
 var player
 var start_button
 var wave_label
+var tower_select_label
 var spawn_timer
 
 var current_wave = 1
@@ -40,6 +41,12 @@ func _ready():
 	if has_node("UI/WaveLabel"):
 		wave_label = $UI/WaveLabel
 	
+	if has_node("UI/TowerSelectLabel"):
+		tower_select_label = $UI/TowerSelectLabel
+		print("TowerSelectLabel found!")
+	else:
+		print("TowerSelectLabel NOT found - check node name")
+	
 	spawn_timer = Timer.new()
 	spawn_timer.one_shot = false
 	spawn_timer.timeout.connect(spawn_demon)
@@ -54,13 +61,13 @@ func _unhandled_input(event):
 			match event.keycode:
 				KEY_1:
 					selected_tower_type = "basic"
-					print("Selected: Basic Tower")
+					update_tower_selection_ui()
 				KEY_2:
 					selected_tower_type = "sniper"
-					print("Selected: Sniper Tower")
+					update_tower_selection_ui()
 				KEY_3:
 					selected_tower_type = "machinegun"
-					print("Selected: Machine Gun Tower")
+					update_tower_selection_ui()
 		
 		# Click to place selected tower
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -164,3 +171,21 @@ func update_ui():
 		wave_label.text = "Wave: " + str(current_wave)
 	if start_button:
 		start_button.visible = false
+	update_tower_selection_ui()
+
+func update_tower_selection_ui():
+	if tower_select_label:
+		if placement_phase:
+			var tower_info = ""
+			match selected_tower_type:
+				"basic":
+					tower_info = "[1] BASIC TOWER - Balanced (200 range)"
+				"sniper":
+					tower_info = "[2] SNIPER TOWER - High Damage (350 range)"
+				"machinegun":
+					tower_info = "[3] MACHINE GUN - Fast Fire (150 range)"
+			
+			tower_select_label.text = tower_info
+			tower_select_label.visible = true
+		else:
+			tower_select_label.visible = false

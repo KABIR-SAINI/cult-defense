@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://ckynysvnxowcn"]
+
+[ext_resource type="Script" uid="uid://cmykou3h1abqw" path="res://scripts/demon.gd" id="1_6p4pk"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gxxsb"]
+custom_solver_bias = 1.0
+size = Vector2(40, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6p4pk"]
+size = Vector2(40, 40)
+
+[node name="Demon" type="CharacterBody2D"]
+script = ExtResource("1_6p4pk")
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+color = Color(0.7538779, 0, 0.2549929, 1)
+polygon = PackedVector2Array(0, -20, -20, 20, 20, 20)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_gxxsb")
+disabled = true
+
+[node name="Hitbox" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+shape = SubResource("RectangleShape2D_6p4pk")

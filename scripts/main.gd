@@ -99,11 +99,10 @@ func setup_music():
 	game_music.autoplay = true
 	game_music.finished.connect(_on_game_music_finished)
 	add_child(game_music)
-	
-	# Boss music
+
 	boss_music = AudioStreamPlayer.new()
 	boss_music.name = "BossMusic"
-	boss_music.stream = load("res://Music/Boss Music.mp3")
+	boss_music.stream = load("res://Music/Boss Music.mp3w")
 	boss_music.volume_db = -8
 	add_child(boss_music)
 

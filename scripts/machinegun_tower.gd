@@ -1,5 +1,4 @@
 extends BaseTower
-
 func _ready():
 	tower_name = "Machine Gun Tower"
 	shoot_cooldown = 0.15  # Very fast fire rate

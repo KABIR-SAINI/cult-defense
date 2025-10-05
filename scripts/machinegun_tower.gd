@@ -7,7 +7,6 @@ func _ready():
 	detection_radius = 150.0  # Short range
 	tower_color = Color(1.0, 0.8, 0.2)  # Yellow/gold
 	super._ready()
-
 func create_visual():
 	if not has_node("Visual"):
 		var polygon = Polygon2D.new()

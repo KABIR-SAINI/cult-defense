@@ -21,41 +21,8 @@ func _ready():
 	create_visual()
 
 func create_visual():
-	if not has_node("Visual"):
-		var body = Polygon2D.new()
-		body.name = "Visual"
-		body.polygon = PackedVector2Array([
-			Vector2(0, -25),
-			Vector2(12, -15),
-			Vector2(10, 5),
-			Vector2(15, 20),
-			Vector2(5, 20),
-			Vector2(0, 10),
-			Vector2(-5, 20),
-			Vector2(-15, 20),
-			Vector2(-10, 5),
-			Vector2(-12, -15)
-		])
-		body.color = Color(0.3, 0.6, 1.0)
-		
-		var face = Polygon2D.new()
-		face.polygon = PackedVector2Array([
-			Vector2(-3, -18), Vector2(-1, -18),
-			Vector2(-1, -16), Vector2(-3, -16)
-		])
-		face.color = Color.WHITE
-		body.add_child(face)
-		
-		var face2 = Polygon2D.new()
-		face2.polygon = PackedVector2Array([
-			Vector2(1, -18), Vector2(3, -18),
-			Vector2(3, -16), Vector2(1, -16)
-		])
-		face2.color = Color.WHITE
-		body.add_child(face2)
-		
-		add_child(body)
-		visual_node = body
+	# Player has no visual sprite - just motion blur trail
+	pass
 
 func _physics_process(delta):
 	handle_movement(delta)
@@ -69,8 +36,6 @@ func handle_movement(delta):
 	
 	if direction.length() > 0:
 		direction = direction.normalized()
-		if visual_node:
-			visual_node.rotation = direction.angle() + PI/2
 	
 	velocity = direction * speed
 	move_and_slide()
@@ -106,33 +71,17 @@ func handle_health_drain(delta):
 	if main_ref.wave_active:
 		current_health -= health_drain_rate * delta
 		
-		if current_health < 30 and visual_node:
-			var flash_speed = 2.0
-			visual_node.modulate = Color(1.0, 0.5 + sin(Time.get_ticks_msec() * 0.01 * flash_speed) * 0.5, 0.5)
-		
 		if current_health <= DEATH_HEALTH:
 			die()
 
 func take_damage(amount):
 	current_health -= amount
 	
-	if visual_node:
-		visual_node.modulate = Color(2, 0.5, 0.5)
-		await get_tree().create_timer(0.1).timeout
-		if is_instance_valid(visual_node):
-			visual_node.modulate = Color.WHITE
-	
 	if current_health <= DEATH_HEALTH:
 		die()
 
 func sacrifice_heal(amount):
 	current_health = min(current_health + amount, max_health)
-	
-	if visual_node:
-		visual_node.modulate = Color(0.5, 2, 0.5)
-		await get_tree().create_timer(0.2).timeout
-		if is_instance_valid(visual_node):
-			visual_node.modulate = Color.WHITE
 
 func die():
 	get_tree().reload_current_scene()

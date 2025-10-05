@@ -15,6 +15,7 @@ var player_ref = null
 var visual_node = null
 var trail_positions = []
 var trail_timer = 0.0
+var current_angle = 0.0  # Track rotation angle
 
 func _ready():
 	current_health = health
@@ -27,37 +28,8 @@ func _ready():
 	create_visual()
 
 func create_visual():
-	if not has_node("Visual"):
-		var body = Polygon2D.new()
-		body.name = "Visual"
-		body.polygon = PackedVector2Array([
-			Vector2(0, -20),
-			Vector2(15, -5),
-			Vector2(10, 15),
-			Vector2(0, 10),
-			Vector2(-10, 15),
-			Vector2(-15, -5)
-		])
-		body.color = Color(0.8, 0.2, 0.2)
-		
-		var eye1 = Polygon2D.new()
-		eye1.polygon = PackedVector2Array([
-			Vector2(-8, -8), Vector2(-4, -8),
-			Vector2(-4, -4), Vector2(-8, -4)
-		])
-		eye1.color = Color.YELLOW
-		body.add_child(eye1)
-		
-		var eye2 = Polygon2D.new()
-		eye2.polygon = PackedVector2Array([
-			Vector2(4, -8), Vector2(8, -8),
-			Vector2(8, -4), Vector2(4, -4)
-		])
-		eye2.color = Color.YELLOW
-		body.add_child(eye2)
-		
-		add_child(body)
-		visual_node = body
+	# Demons have no visual sprite - just motion blur trail
+	pass
 
 func _physics_process(delta):
 	if not is_instance_valid(player_ref):
@@ -69,11 +41,14 @@ func _physics_process(delta):
 	velocity = direction * speed
 	move_and_slide()
 	
-	if visual_node:
-		visual_node.rotation = direction.angle() + PI/2
+	# Update rotation angle to face player
+	current_angle = direction.angle()
 	
 	# Update motion blur trail
 	update_trail(delta)
+	
+	# Force redraw every frame to update triangle rotation
+	queue_redraw()
 	
 	var distance = global_position.distance_to(player_ref.global_position)
 	if distance < ATTACK_RANGE:
@@ -97,6 +72,17 @@ func update_trail(delta):
 	queue_redraw()
 
 func _draw():
+	# Draw main triangle at current position, using stored angle
+	var size = 15.0
+	
+	# Triangle pointing in movement direction
+	var point1 = Vector2(cos(current_angle), sin(current_angle)) * size
+	var point2 = Vector2(cos(current_angle + 2.5), sin(current_angle + 2.5)) * (size * 0.7)
+	var point3 = Vector2(cos(current_angle - 2.5), sin(current_angle - 2.5)) * (size * 0.7)
+	
+	draw_colored_polygon(PackedVector2Array([point1, point2, point3]), Color(0.8, 0.2, 0.2))
+	
+	# Draw fading trail
 	if trail_positions.size() < 2:
 		return
 	
@@ -112,20 +98,11 @@ func attack_player():
 		player_ref.take_damage(damage)
 
 func flash_red():
-	if visual_node:
-		visual_node.modulate = Color(2, 0.5, 0.5)
-		await get_tree().create_timer(0.1).timeout
-		if is_instance_valid(visual_node):
-			visual_node.modulate = Color.WHITE
+	# No visual sprite to flash
+	pass
 
 func take_damage(amount):
 	current_health -= amount
-	
-	if visual_node:
-		visual_node.modulate = Color.WHITE
-		await get_tree().create_timer(0.05).timeout
-		if is_instance_valid(visual_node):
-			visual_node.modulate = Color(0.8, 0.2, 0.2)
 	
 	if current_health <= 0:
 		die()

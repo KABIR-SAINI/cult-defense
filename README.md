@@ -19,7 +19,7 @@ Click - Place towers
 1,2,3 - select tower
 
 🔧 Made With
-
+we have used ai to fix errors in code and watched yt vids to learn
 Engine: Godot
 
 Developed for: Day Dream 2025

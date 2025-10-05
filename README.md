@@ -25,6 +25,8 @@ Engine: Godot
 Developed for: Day Dream 2025
 
 Theme: Sacrifices Must Be Made
+we have used ai to fix errors you can see it in comits also
+
 
 
 🧑‍💻 Team

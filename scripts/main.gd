@@ -1,26 +1,30 @@
 extends Node2D
 
-var follower_scene = load("res://scenes/follower.tscn")
-var demon_scene = load("res://scenes/demon.tscn")
+const INITIAL_FOLLOWERS = 3
+const INITIAL_DEMONS = 5
+const DEMONS_PER_WAVE = 2
+const SPAWN_INTERVAL = 1.5
+const SPAWN_DISTANCE_MIN = 550
+const SPAWN_DISTANCE_MAX = 650
+
+var follower_scene = preload("res://scenes/follower.tscn")
+var demon_scene = preload("res://scenes/demon.tscn")
 
 var player
 var start_button
 var wave_label
+var spawn_timer
 
 var current_wave = 1
-var followers_to_place = 3
+var followers_to_place = INITIAL_FOLLOWERS
 var followers_placed = 0
 var placement_phase = true
 var wave_active = false
-
 var demons_alive = 0
-var demons_to_spawn = 5
+var demons_to_spawn = INITIAL_DEMONS
 var demons_spawned = 0
 
-var spawn_timer
-
 func _ready():
-	randomize()
 	add_to_group("main")
 	player = $Player
 	
@@ -33,6 +37,7 @@ func _ready():
 		wave_label = $UI/WaveLabel
 	
 	spawn_timer = Timer.new()
+	spawn_timer.one_shot = false
 	spawn_timer.timeout.connect(spawn_demon)
 	add_child(spawn_timer)
 	
@@ -61,9 +66,11 @@ func start_wave():
 	
 	enable_follower_sacrifice()
 	
-	demons_to_spawn = 5 + (current_wave - 1) * 2
+	demons_to_spawn = INITIAL_DEMONS + (current_wave - 1) * DEMONS_PER_WAVE
 	demons_spawned = 0
-	spawn_timer.wait_time = 1.5
+	demons_alive = 0
+	
+	spawn_timer.wait_time = SPAWN_INTERVAL
 	spawn_timer.start()
 
 func enable_follower_sacrifice():
@@ -77,18 +84,17 @@ func spawn_demon():
 		return
 	
 	var angle = randf() * TAU
-	var spawn_distance = randf_range(550, 650)
-	
+	var spawn_distance = randf_range(SPAWN_DISTANCE_MIN, SPAWN_DISTANCE_MAX)
 	var offset = Vector2(cos(angle), sin(angle)) * spawn_distance
 	var spawn_pos = player.global_position + offset
 	
 	var demon = demon_scene.instantiate()
-	add_child(demon)
+	call_deferred("add_child", demon)
 	demon.global_position = spawn_pos
 	
-	var base_health = 50 + (current_wave * 10)
-	var base_damage = 15 + (current_wave * 3)
-	var base_speed = 150 + (current_wave * 20)
+	var base_health = 50.0 + (current_wave * 10.0)
+	var base_damage = 15.0 + (current_wave * 3.0)
+	var base_speed = 350.0 + (current_wave * 25.0)
 	
 	demon.health = base_health
 	demon.current_health = base_health
@@ -100,14 +106,17 @@ func spawn_demon():
 
 func on_demon_died():
 	demons_alive -= 1
-	if demons_alive <= 0 and wave_active:
+	
+	if demons_alive <= 0 and wave_active and demons_spawned >= demons_to_spawn:
 		complete_wave()
 
 func complete_wave():
 	wave_active = false
+	spawn_timer.stop()
 	current_wave += 1
-	clear_all_followers()
+	
 	await get_tree().create_timer(2.0).timeout
+	clear_all_followers()
 	start_placement_phase()
 
 func clear_all_followers():
@@ -117,7 +126,7 @@ func clear_all_followers():
 func start_placement_phase():
 	placement_phase = true
 	followers_placed = 0
-	followers_to_place = 3 + (current_wave - 1)
+	followers_to_place = INITIAL_FOLLOWERS + (current_wave - 1)
 	update_ui()
 
 func update_ui():

@@ -21,7 +21,9 @@ func _physics_process(delta):
 	velocity = direction * speed
 	move_and_slide()
 	
-	current_health -= health_drain_rate * delta
+	var main = get_tree().get_first_node_in_group("main")
+	if main and main.wave_active:
+		current_health -= health_drain_rate * delta
 	
 	if current_health <= 0:
 		die()

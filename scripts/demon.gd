@@ -18,7 +18,7 @@ func _ready():
 	if has_node("Hitbox"):
 		$Hitbox.add_to_group("demons")
 	
-	# Cache player reference once instead of searching every frame
+	
 	player_ref = get_tree().get_first_node_in_group("player")
 
 func _physics_process(delta):

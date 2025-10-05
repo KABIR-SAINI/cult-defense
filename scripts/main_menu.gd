@@ -9,6 +9,7 @@ var circle: ColorRect
 var title_label: Label
 var prompt_label: Label
 var circle_glow: ColorRect
+var music_player: AudioStreamPlayer
 
 func _ready():
 	setup_background()
@@ -16,6 +17,7 @@ func _ready():
 	setup_circle_glow()
 	setup_title()
 	setup_prompt()
+	setup_music()
 
 func setup_background():
 	background = ColorRect.new()
@@ -68,6 +70,14 @@ func setup_prompt():
 	prompt_label.size = Vector2(300, 50)
 	add_child(prompt_label)
 
+func setup_music():
+	music_player = AudioStreamPlayer.new()
+	music_player.name = "MenuMusic"
+	music_player.stream = load("res://Music/Menu Music.mp3")
+	music_player.autoplay = true
+	music_player.volume_db = -10
+	add_child(music_player)
+
 func _process(delta):
 	if is_transitioning:
 		return
@@ -101,6 +111,11 @@ func _input(event):
 func start_transition():
 	is_transitioning = true
 	can_start = false
+	
+	# Fade out menu music smoothly
+	var music_fade = create_tween()
+	music_fade.tween_property(music_player, "volume_db", -80, 1.5)
+	music_fade.tween_callback(music_player.stop)
 	
 	# Fade out title and prompt quickly
 	var fade_tween = create_tween().set_parallel(true)

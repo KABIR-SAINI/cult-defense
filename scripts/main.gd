@@ -33,6 +33,10 @@ var wave_label
 var tower_select_label
 var cash_label
 var spawn_timer
+var game_music: AudioStreamPlayer
+var boss_music: AudioStreamPlayer
+var game_music_playlist = []
+var current_song_index = 0
 
 # Game state
 var selected_tower_type = "basic"
@@ -52,6 +56,7 @@ func _ready():
 	add_to_group("main")
 	cache_references()
 	setup_spawn_timer()
+	setup_music()
 	update_ui()
 
 func cache_references():
@@ -76,6 +81,31 @@ func setup_spawn_timer():
 	spawn_timer.one_shot = false
 	spawn_timer.timeout.connect(spawn_demon)
 	add_child(spawn_timer)
+
+func setup_music():
+	# Load game music playlist
+	game_music_playlist = [
+		load("res://audio/game_music_1.ogg"),
+		load("res://audio/game_music_2.ogg"),
+		load("res://audio/game_music_3.ogg")
+		# Add more songs here as needed
+	]
+	
+	# Game music player - start with first song
+	game_music = AudioStreamPlayer.new()
+	game_music.name = "GameMusic"
+	game_music.stream = game_music_playlist[0]
+	game_music.volume_db = -10
+	game_music.autoplay = true
+	game_music.finished.connect(_on_game_music_finished)
+	add_child(game_music)
+	
+	# Boss music
+	boss_music = AudioStreamPlayer.new()
+	boss_music.name = "BossMusic"
+	boss_music.stream = load("res://audio/boss_music.ogg")
+	boss_music.volume_db = -8
+	add_child(boss_music)
 
 func _unhandled_input(event):
 	if not placement_phase:
@@ -137,6 +167,12 @@ func start_wave():
 	
 	enable_follower_sacrifice()
 	setup_demon_spawning()
+	
+	# Start appropriate music with fade in
+	if is_boss_round:
+		transition_to_boss_music()
+	else:
+		transition_to_game_music()
 
 func enable_follower_sacrifice():
 	for follower in get_tree().get_nodes_in_group("followers"):
@@ -229,11 +265,52 @@ func should_complete_wave() -> bool:
 func complete_wave():
 	wave_active = false
 	spawn_timer.stop()
+	
+	# Don't fade out music - keep it playing continuously
+	
 	current_wave += 1
 	
 	await get_tree().create_timer(2.0).timeout
 	clear_all_followers()
 	start_placement_phase()
+
+func fade_out_all_music():
+	# This function is no longer used but kept for compatibility
+	pass
+
+func transition_to_game_music():
+	# Stop and fade out boss music if playing
+	if boss_music.playing:
+		var fade_out = create_tween()
+		fade_out.tween_property(boss_music, "volume_db", -80, 1.0)
+		fade_out.tween_callback(boss_music.stop)
+	
+	# Resume game music if it was stopped, or just fade it back in
+	if not game_music.playing:
+		game_music.play()
+	
+	game_music.volume_db = -80
+	var fade_in = create_tween()
+	fade_in.tween_property(game_music, "volume_db", -10, 1.5)
+
+func _on_game_music_finished():
+	# Play next song in playlist
+	current_song_index = (current_song_index + 1) % game_music_playlist.size()
+	game_music.stream = game_music_playlist[current_song_index]
+	game_music.play()
+
+func transition_to_boss_music():
+	# Stop and fade out game music if playing
+	if game_music.playing:
+		var fade_out = create_tween()
+		fade_out.tween_property(game_music, "volume_db", -80, 1.0)
+		fade_out.tween_callback(game_music.stop)
+	
+	# Start boss music from silent and fade in
+	boss_music.volume_db = -80
+	boss_music.play()
+	var fade_in = create_tween()
+	fade_in.tween_property(boss_music, "volume_db", -8, 1.5)
 
 func clear_all_followers():
 	for follower in get_tree().get_nodes_in_group("followers"):

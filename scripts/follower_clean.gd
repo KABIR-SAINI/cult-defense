@@ -37,20 +37,17 @@ func _process(delta):
 		shoot_timer = shoot_cooldown
 
 func find_and_shoot_demon():
-	# Use Area2D detection instead of searching entire tree
-	var areas = detection_range.get_overlapping_areas()
+	# Get all demons and check distance manually (more reliable than Area2D detection)
+	var all_demons = get_tree().get_nodes_in_group("demons")
 	var nearest_demon = null
 	var nearest_distance = DETECTION_RADIUS
 	
-	for area in areas:
-		# Check if this is a demon's hitbox
-		if area.name == "Hitbox" and area.get_parent().is_in_group("demons"):
-			var demon = area.get_parent()
-			if is_instance_valid(demon):
-				var distance = global_position.distance_to(demon.global_position)
-				if distance < nearest_distance:
-					nearest_distance = distance
-					nearest_demon = demon
+	for demon in all_demons:
+		if demon is CharacterBody2D and is_instance_valid(demon):
+			var distance = global_position.distance_to(demon.global_position)
+			if distance < nearest_distance:
+				nearest_distance = distance
+				nearest_demon = demon
 	
 	# Shoot the nearest demon
 	if nearest_demon and nearest_demon.has_method("take_damage"):
